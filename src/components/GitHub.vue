@@ -1,52 +1,88 @@
 <template>
     <div>
-        <!-- TODO: Crear componente GitHub -->
+        <div>
+            <input type="text" placeholder="Introduce un nombre de usuario de GITHUB" v-model="user" @keydown.enter="obtenerUsuario">
+        </div>
+
+        <div v-if="userValid">
+            <p><img :src="userData.avatar_url"></p>
+            <p>El nombre es: {{ userData.login }} </p>
+            <a :href="userData.html_url" target="_blank"> Enlace a su url</a>
+            <button type="button" @click="obtenerRepositorios"> Repositorios </button>
+
+            <div v-if="mostrarRepositorio">
+                <GitHubRepos :repolist="repositorios"></GitHubRepos>
+            </div>
+        </div>
     </div>
 </template>
 
 <script>
 
 // TODO: Importar componente GitHubRepos
+import GitHubRepos from "./GitHubRepos.vue"
 
 export default {
     name: 'GitHub',
     components: {
         // TODO: Importar componente GitHubRepos
+        GitHubRepos
     },
     data: function() {
         return {
             // TODO: crear variables de datos para el funcionamiento del componente
+            user: "",
+            userData: {}, 
+            userValid: false,
+            repositorios: {},
+            mostrarRepositorio: true
         }
     },
     methods: {
         obtenerUsuario: function() {
-            // TODO: Función para obtener los datos de usuario de la API de GitHub
 
-            // TODO: Añadir lógica para resetear los cambios en el interfaz: desactivar campo de envío,
-            // resetear mensaje de error, mostrar lista de repositorios,...
-
-            // Obtener datos de autenticación de usuario para hacer peticiones
-            // autenticadas a la API de GitHub
             var userAuth = process.env.VUE_APP_USERNAME || "user";
             var passAuth = process.env.VUE_APP_USERTOKEN || "pass";
 
-            // TODO: realizar petición fetch par obtener los datos y mostrar la información en la página
-            // Ejemplo de paso de datos de autorización con fetch: https://stackoverflow.com/questions/43842793/basic-authentication-with-fetch
+            let base64 = require('base-64');
 
+            let url = "https://api.github.com/users/" + this.user;
+
+            let headers = new Headers();
+
+            headers.set('Authorization', 'Basic ' + base64.encode(userAuth + ":" + passAuth));
+
+            fetch(url, {method:'GET',
+                    headers: headers,
+                })
+            .then(res => res.json())
+            .then(response => {
+                console.log(response);
+                this.userData = response;
+                this.userValid = true;
+            })
         },
         obtenerRepositorios: function() {
-            // TODO: Función para obtener los repositorios del usuario desde la API de GítHub
-            // La URL de los repositorios de usuario se puede obtener a través del campo 'repos_url' de los datos del usuario
-
-            // Obtener datos de autenticación de usuario para hacer peticiones
-            // autenticadas a la API de GitHub
-            var userAuth = process.env.VUE_APP_USERNAME || "user";
+             var userAuth = process.env.VUE_APP_USERNAME || "user";
             var passAuth = process.env.VUE_APP_USERTOKEN || "pass";
 
+            let base64 = require('base-64');
 
-            // TODO: realizar petición fetch par obtener los datos y mostrar la información en la página
-            // Ejemplo de paso de datos de autorización con fetch: https://stackoverflow.com/questions/43842793/basic-authentication-with-fetch
+            let url = this.userData.repos_url
 
+            let headers = new Headers();
+
+            headers.set('Authorization', 'Basic ' + base64.encode(userAuth + ":" + passAuth));
+
+            fetch(url, {method:'GET',
+                    headers: headers,
+                })
+            .then(res => res.json())
+            .then(response => {
+                console.log(response);
+                this.repositorios = response;
+                this.mostrarRepositorio = true;
+            })
         }
     }
 }
